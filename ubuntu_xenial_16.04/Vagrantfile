@@ -1,0 +1,128 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+servers = [
+    {
+        :name => "zdsvtxlocnc01",
+        :box => "ubuntu/xenial64",
+        :box_version => "20180831.0.0",
+        :mem => "2048",
+        :cpu => "2",
+        :attuid => "<attuid>", #<attuid>
+        :add_id_rsa => "true",
+        :attname => "<FirstName LastName>", #<FirstName LastName>
+        :attpassword => "<Login Password>", #<Login Password>
+        :uid => "<attUID>", #<attUID>
+        :attgroup => "<attGroupName>", #<attGroupName>
+        :gid => "<attGID>", #<attGID>
+        :gerrit_url => "<Gerrit Server URL>", #<Gerrit Server URL>
+        :gerrit_repos => "<Gerrit Repos to be cloned>", #<Gerrit Repos to be cloned(seperated by commas)>
+    }
+]
+
+# This script to install k8s using kubeadm will get executed after a box is provisioned
+$configureBox = <<-SCRIPT
+    # Positional Parameters
+    attuid=$1
+    attname=$2
+    attpassword=$3
+    uid=$4
+    attgroup=$5
+    gid=$6
+    gerrit_url=$7
+    gerrit_repos=$8
+
+    # Setup Repos for Xenial
+    usermod -aG docker vagrant
+
+    echo "export EDITOR=vi" >> /etc/profile
+    apt-get update 2>/dev/null
+    apt-get install -y --allow-unauthenticated apt-transport-https ca-certificates curl software-properties-common
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+    add-apt-repository "deb https://download.docker.com/linux/$(. /etc/os-release; echo "$ID") $(lsb_release -cs) stable"
+    apt-get update 2>/dev/null && apt-get install -y --allow-unauthenticated docker-ce=$(apt-cache madison docker-ce | grep 17.03 | head -1 | awk '{print $3}')
+
+    # required for setting up password less ssh between guest VMs
+    sudo sed -i "/^[^#]*PasswordAuthentication[[:space:]]no/c\PasswordAuthentication yes" /etc/ssh/sshd_config
+    sudo service sshd restart
+
+    # run docker commands as vagrant user (sudo not required)
+    if [[ $attuid != none ]] && [[ $attname != none ]] && [[ $attpassword != none ]] && [[ $attgroup != none ]] && [[ $uid != none ]] && [[ $gid != none ]];then
+      groupadd -g $gid $attgroup 2>/dev/null
+      useradd -u $uid -g $attgroup -s /bin/bash -c "$attname" -m -d /home/$attuid $attuid 2>/dev/null
+      usermod -a -G sudo $attuid 2>/dev/null
+      yes "$attpassword" | passwd $attuid
+      sed -i "/^%sudo/ s/.*/%sudo   ALL=(ALL:ALL) NOPASSWD:ALL/g" /etc/sudoers
+
+      echo -e "${IP_ADDR}\t\t${HOSTNAME}.local.att.com ${HOSTNAME}" >> /etc/hosts
+      sudo --user=vagrant touch /home/vagrant/.Xauthority
+
+      if [ -f /tmp/id_rsa ];then
+        mkdir -p -m 700 /home/$attuid/.ssh
+        mv /tmp/id_rsa /home/$attuid/.ssh
+        chmod 400 /home/$attuid/.ssh/id_rsa
+        ssh-keygen -y -f /home/$attuid/.ssh/id_rsa > /home/$attuid/.ssh/id_rsa.pub
+        chown -R $attuid: /home/$attuid
+        if [ $gerrit_url != none ];then
+          echo -e "Host $gerrit_url\n\tStrictHostKeyChecking no\n" > /home/$attuid/.ssh/config
+          if [ $gerrit_repos != none ];then
+            IFS=","
+            for repo in ${gerrit_repos}
+            do
+              if [ ! -d "/home/$attuid/$repo" ];then
+                su - $attuid -c "git clone \"ssh://${attuid}@${gerrit_url}:29418/${repo}\" && scp -p -P 29418 $attuid@${gerrit_url}:hooks/commit-msg \"${repo}/.git/hooks/\""
+              else
+                echo -e "$repo repo is already cloned ..."
+              fi
+            done
+            IFS=" "
+          fi
+        fi
+      fi
+    fi
+
+    # Reboot VM to come up with all customized changes.
+    reboot
+
+SCRIPT
+
+Vagrant.configure("2") do |config|
+
+    servers.each do |opts|
+        config.vm.define opts[:name] do |config|
+
+            config.vm.box = opts[:box]
+            config.vm.box_version = opts[:box_version]
+            config.vm.hostname = opts[:name]
+            config.vm.network :forwarded_port, guest: 22, host: 2222, id: "ssh", disabled: true
+            config.vm.network :forwarded_port, guest: 22, host: 2200, auto_correct: true
+            config.vm.provider "virtualbox" do |v|
+
+                v.name = opts[:name]
+            	 v.customize ["modifyvm", :id, "--groups", "/ATT Development"]
+                v.customize ["modifyvm", :id, "--memory", opts[:mem]]
+                v.customize ["modifyvm", :id, "--cpus", opts[:cpu]]
+
+            end
+
+            attuid = opts[:attuid] 
+            attname = opts[:attname] 
+            attpassword = opts[:attpassword] 
+            uid = opts[:uid] 
+            attgroup = opts[:attgroup] 
+            gid = opts[:gid] 
+            gerrit_url = opts[:gerrit_url] 
+            gerrit_repos = opts[:gerrit_repos] 
+
+            if opts[:add_id_rsa] == "true"
+                config.vm.provision "file", run: "always", source: "id_rsa", destination: "/tmp/id_rsa"
+            end
+
+            config.vm.provision "shell", run: "always", inline: $configureBox, :args => [attuid,attname,attpassword,uid,attgroup,gid,gerrit_url,gerrit_repos]
+
+
+        end
+
+    end
+
+end 
