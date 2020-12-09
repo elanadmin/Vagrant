@@ -20,15 +20,15 @@ servers = [
         :box_version => "20180831.0.0",
         :mem => "2048",
         :cpu => "2",
-        :attuid => "<attuid>",
-        :add_id_rsa => "false",
-        :attname => "<FirstName LastName>",
-        :attpassword => "<Login Password>",
-        :uid => "<attUID>",
-        :attgroup => "<attGroupName>",
-        :gid => "<attGID>",
-        :gerrit_url => "<Gerrit Server URL>"
-        :gerrit_repos => "<Gerrit Repos to be cloned(seperated by commas)>"
+        :attuid => "<attuid>", #<AlphaNumeric attuid>
+        :add_id_rsa => "true",
+        :attname => "<FirstName LastName>", #<FirstName LastName>
+        :attpassword => "<Login Password>", #<Login Password into VM>
+        :uid => "<attUID>", #<Numeric attUID>
+        :attgroup => "<attGroupName>", #<Alphabetic attGroupName>
+        :gid => "<attGID>", #<Numeric attGID>
+        :gerrit_url => "<Gerrit Server FQDN>", #<Gerrit Server FQDN>
+        :gerrit_repos => "<Gerrit Repos to be cloned>", #<Gerrit Repos to be cloned(seperated by commas)>
     }
 ]
 
