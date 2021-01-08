@@ -20,13 +20,13 @@ servers = [
         :box_version => "2004.01",
         :mem => "2048",
         :cpu => "2",
-        :elanuser => "<USERID>",
-        :add_id_rsa => "true",
-        :username => "<USER FULLNAME>",
-        :userpassword => "<USER PASSWORD>",
-        :uid => "<UID>",
-        :elangroup => "<GROUPID",
-        :gid => "<GID>",
+        :elanuser => "<USERID>",       ##Alphabetic, example: rmoturi (ELAN members use same as your LDAP account userid).
+        :add_id_rsa => "true",         ## id_rsa file with your openssh privatekey.
+        :username => "<USER FULLNAME>",##Alphabetic, example: "Rajesh Moturi".
+        :userpassword => "<PASSWORD>", ##Alphanumeric with special character are allowed (ELAN members use same as your LDAP account password).
+        :uid => "<UID>",               ##Numeric, Any Number Between 50 and 500.
+        :elangroup => "<GROUPID>",     ##Alphabetic, example: default.
+        :gid => "<GID>",               ##Numeric, Any Number Between 50 and 500.
         :os_codename => "maipo"
     }
 ]
@@ -36,7 +36,7 @@ servers = [
 ## add_id_rsa:
 If set to true, You need to create id_rsa file with your private key in the same folder of your Vagrantfile.
 
-As you can see above, you can also configure IP address, memory and CPU in the servers array. 
+As you can see above, you can also configure IP address, memory and CPU capacities in the servers array. 
 
 ## How to Run
 
@@ -62,32 +62,49 @@ Select the Network Interface for Bridge Adapter, When prompted:
     edallocvm01: Which interface should the network bridge to? 1
 ```
 
-## Access VM
+##Connect/Access To VM
 
-Execute the following command to check status and access VM using vagrant:
-
+Check th VM status using vagrant.
 ```
 vagrant status
+Current machine states:
 
-vagrant ssh
+edallocvm01                running (virtualbox)
+
+This environment represents multiple VMs. The VMs are all listed
+above with their current state. For more information about a specific
+VM, run `vagrant status NAME`.
 ```
-(or)
 
-Using Putty/Mobaxterm, you can access VM:
-
+List the Host to Guest Ports.
 ```
-ssh 127.0.0.1 -p 2200
+vagrant port edallocvm01
+The forwarded ports for the machine are listed below. Please note that
+these values may differ from values configured in the Vagrantfile if the
+provider supports automatic port collision detection and resolution.
+
+    22 (guest) => 2200 (host)
+```
+
+Connect to VM using localhost(You can also use Putty/Mobaxterm).
+
+#Note: Default LoginUser/Password: vagrant/vagrant
+#      Custom  LoginUser/Password: <USERID>/<PASSWORD> defined in above Servers block(Recommended).
+```
+ssh -p 2200 localhost -l vagrant
+           (or)
+ssh -p 2200 localhost -l <USERID>
 ```
 
 ## Clean-up
 
-Execute the following command to remove the virtual machines created for the Kubernetes cluster.
+Execute the following command to remove the virtual machine.
 
 ```
-vagrant destroy -f
+vagrant destroy -f edallocvm01
 ```
 
-You can destroy individual machines by vagrant destroy k8s-node-1 -f
+You can destroy individual machines by vagrant destroy <VM> -f
 
 ## Licensing
 

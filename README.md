@@ -35,45 +35,6 @@ servers = [
 ]
 
 ```
-
-## add_id_rsa:
-If set to true, You need to create id_rsa file with your private key in the same folder of your Vagrantfile.
-
-As you can see above, you can also configure IP address, memory and CPU in the servers array. 
-
-## How to Run
-
-Execute the following vagrant command to start provisioning of VM in the same folder of your Vagrantfile:
-
-```
-vagrant validate
-
-vagrant up
-```
-
-## Access VM
-
-Execute the following command to check status and access VM using vagrant:
-```
-vagrant status
-
-vagrant ssh
-```
-(or)
-
-Using Putty/Mobaxterm, you can access VM:
-```
-ssh 127.0.0.1 -p 2200
-```
-
-## Clean-up
-
-Execute the following command to remove the virtual machines created for the Kubernetes cluster.
-```
-vagrant destroy -f
-vagrant status
-```
-
 ## Licensing
 
 [Apache License, Version 2.0](http://opensource.org/licenses/Apache-2.0).

@@ -20,14 +20,14 @@ servers = [
         :box_version => "20180831.0.0",
         :mem => "2048",
         :cpu => "2",
-        :attuid => "<attuid>", #<AlphaNumeric attuid>
+        :attuid => "<attuid>",                #<AlphaNumeric attuid>
         :add_id_rsa => "true",
-        :attname => "<FirstName LastName>", #<FirstName LastName>
-        :attpassword => "<Login Password>", #<Login Password into VM>
-        :uid => "<attUID>", #<Numeric attUID>
-        :attgroup => "<attGroupName>", #<Alphabetic attGroupName>
-        :gid => "<attGID>", #<Numeric attGID>
-        :gerrit_url => "<Gerrit Server FQDN>", #<Gerrit Server FQDN>
+        :attname => "<FirstName LastName>",   #<FirstName LastName>
+        :attpassword => "<Login Password>",   #<Login Password into VM>
+        :uid => "<attUID>",                   #<Numeric attUID>
+        :attgroup => "<attGroupName>",        #<Alphabetic attGroupName>
+        :gid => "<attGID>",                   #<Numeric attGID>
+        :gerrit_url => "<Gerrit Server FQDN>",#<Gerrit Server FQDN>
         :gerrit_repos => "<Gerrit Repos to be cloned>", #<Gerrit Repos to be cloned(seperated by commas)>
     }
 ]
@@ -49,26 +49,45 @@ vagrant validate
 vagrant up
 ```
 
-## Access VM
+##Connect/Access To VM
 
-Execute the following command to check status and access VM using vagrant:
+Check th VM status using vagrant.
 ```
 vagrant status
+Current machine states:
 
-vagrant ssh
-```
-(or)
+zdsvtxlocnc01                running (virtualbox)
 
-Using Putty/Mobaxterm, you can access VM:
+This environment represents multiple VMs. The VMs are all listed
+above with their current state. For more information about a specific
+VM, run `vagrant status NAME`.
 ```
-ssh 127.0.0.1 -p 2200
+
+List the Host to Guest Ports.
+```
+vagrant port zdsvtxlocnc01
+The forwarded ports for the machine are listed below. Please note that
+these values may differ from values configured in the Vagrantfile if the
+provider supports automatic port collision detection and resolution.
+
+    22 (guest) => 2200 (host)
+```
+
+Connect to VM using localhost(You can also use Putty/Mobaxterm).
+
+#Note: Default LoginUser/Password: vagrant/vagrant
+#      Custom  LoginUser/Password: <attuid>/<Login Password> defined in above Servers block(Recommended).
+```
+ssh -p 2200 localhost -l vagrant
+           (or)
+ssh -p 2200 localhost -l <USERID>
 ```
 
 ## Clean-up
 
 Execute the following command to remove the virtual machines created for the Kubernetes cluster.
 ```
-vagrant destroy -f
+vagrant destroy -f zdsvtxlocnc01
 
 vagrant status
 ```
