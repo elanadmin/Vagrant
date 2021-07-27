@@ -62,6 +62,8 @@ $configureBox = <<-SCRIPT
         mv /tmp/id_rsa /home/$attuid/.ssh
         chmod 400 /home/$attuid/.ssh/id_rsa
         ssh-keygen -y -f /home/$attuid/.ssh/id_rsa > /home/$attuid/.ssh/id_rsa.pub
+	cat /home/$attuid/.ssh/id_rsa.pub >> /home/$attuid/.ssh/authorized_keys
+	sed -i "/^$/d" /home/$attuid/.ssh/authorized_keys
         chown -R $attuid: /home/$attuid
         if [ $gerrit_url != none ];then
           echo -e "Host $gerrit_url\n\tStrictHostKeyChecking no\n" > /home/$attuid/.ssh/config

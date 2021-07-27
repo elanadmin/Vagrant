@@ -58,7 +58,8 @@ $configureBox = <<-SCRIPT
       mkdir -p -m 700 /home/$elanuser/.ssh
       mv /var/tmp/id_rsa /home/$elanuser/.ssh
       ssh-keygen -y -f /home/$elanuser/.ssh/id_rsa > /home/$elanuser/.ssh/id_rsa.pub
-      cp -rp /home/$elanuser/.ssh/id_rsa /home/$elanuser/.ssh/authorized_keys
+      cat /home/$elanuser/.ssh/id_rsa.pub >> /home/$elanuser/.ssh/authorized_keys
+      sed -i "/^$/d" /home/$elanuser/.ssh/authorized_keys
       chmod 400 /home/$elanuser/.ssh/id_rsa
       chmod 644 /home/$elanuser/.ssh/authorized_keys
       chown -R $elanuser: /home/$elanuser
