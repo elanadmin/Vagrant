@@ -4,8 +4,8 @@
 servers = [
     {
         :name => "zdsvtxlocnc01",
-        :box => "ubuntu/xenial64",
-        :box_version => "20180831.0.0",
+        :box => "ubuntu/bionic64",
+        :box_version => "20210916.0.0",
         :mem => "2048",
         :cpu => "2",
         :attuid => "<attuid>", #<AlphaNumeric attuid>
@@ -34,7 +34,7 @@ $configureBox = <<-SCRIPT
     gerrit_url=$8
     gerrit_repos=$9
 
-    # Setup Repos for Xenial
+    # Setup Repos for Bionic
     echo "export EDITOR=vi" >> /etc/profile
     apt-get update 2>/dev/null
     apt-get install -y --allow-unauthenticated apt-transport-https ca-certificates curl software-properties-common
@@ -45,7 +45,7 @@ $configureBox = <<-SCRIPT
     # required for setting up password less ssh between guest VMs
     usermod -aG docker vagrant
     sudo sed -i "/^[^#]*PasswordAuthentication[[:space:]]no/c\PasswordAuthentication yes" /etc/ssh/sshd_config
-    sudo service sshd restart
+    sudo systemctl restart sshd 
 
     # run docker commands as vagrant user (sudo not required)
     if [[ $attuid != none ]] && [[ $attname != none ]] && [[ $attpassword != none ]] && [[ $attgroup != none ]] && [[ $uid != none ]] && [[ $gid != none ]];then
@@ -115,7 +115,7 @@ Vagrant.configure("2") do |config|
             uid = opts[:uid] 
             attgroup = opts[:attgroup] 
             gid = opts[:gid] 
-            clone_repos = opts[:clone_repos]
+            clone_repos = opts[:clone_repos] 
             gerrit_url = opts[:gerrit_url] 
             gerrit_repos = opts[:gerrit_repos] 
 
