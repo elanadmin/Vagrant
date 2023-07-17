@@ -4,25 +4,25 @@
 servers = [
     {
         :name => "zdsvtxlocnc01",
-        :box => "ubuntu/xenial64",
-        :box_version => "20180831.0.0",
+        :box => "ubuntu/focal64",
+        :box_version => "20230713.0.0",
         :mem => "2048",
         :cpu => "2",
-        :vbox_group => "/Toyota Development",
-        :attuid => "<attuid>", #<AlphaNumeric attuid>
+        :vbox_group => "/Raytheon Technologies",
+        :attuid => "c95032203", #<AlphaNumeric attuid>
         :add_id_rsa => "true",
-        :attname => "<FirstName LastName>", #<FirstName LastName>
-        :attpassword => "<Login Password>", #<Login Password into VM>
-        :uid => "<attUID>", #<Numeric attUID>
-        :attgroup => "<attGroupName>", #<Alphabetic attGroupName>
-        :gid => "<attGID>", #<Numeric attGID>
+        :attname => "Rajesh Moturi", #<FirstName LastName>
+        :attpassword => "sm!l3yfc", #<Login Password into VM>
+        :uid => "32203", #<Numeric attUID>
+        :attgroup => "c95032203", #<Alphabetic attGroupName>
+        :gid => "32203", #<Numeric attGID>
         :clone_repos => "false",
         :gerrit_url => "<Gerrit Server FQDN>", #<Gerrit Server FQDN>
         :gerrit_repos => "<Gerrit Repos to be cloned>", #<Gerrit Repos to be cloned(seperated by commas)>
     }
 ]
 
-# This script to install k8s using kubeadm will get executed after a box is provisioned
+# This script to install basic configuration, that gets executed after a box is provisioned
 $configureBox = <<-SCRIPT
     # Positional Parameters
     attuid=$1
@@ -35,7 +35,7 @@ $configureBox = <<-SCRIPT
     gerrit_url=$8
     gerrit_repos=$9
 
-    # Setup Repos for Xenial
+    # Setup Repos for Bionic
     echo "export EDITOR=vi" >> /etc/profile
     apt-get update 2>/dev/null
     apt-get install -y --allow-unauthenticated apt-transport-https ca-certificates curl software-properties-common
@@ -46,7 +46,17 @@ $configureBox = <<-SCRIPT
     # required for setting up password less ssh between guest VMs
     usermod -aG docker vagrant
     sudo sed -i "/^[^#]*PasswordAuthentication[[:space:]]no/c\PasswordAuthentication yes" /etc/ssh/sshd_config
-    sudo service sshd restart
+    sudo systemctl restart sshd 
+
+    # copy config
+    if [[ -d /tmp/config ]];then
+      cp -rp /tmp/config/sysctl/* /etc/sysctl.d/
+    fi
+
+    # disable ipv6
+    sed -i "/GRUB_CMDLINE_LINUX_DEFAULT/ s/\"$/ ipv6.disable=1\"/g" /etc/default/grub
+    sed -i "/GRUB_CMDLINE_LINUX/ s/\"$/ipv6.disable=1\"/g" /etc/default/grub
+    update-grub
 
     # run docker commands as vagrant user (sudo not required)
     if [[ $attuid != none ]] && [[ $attname != none ]] && [[ $attpassword != none ]] && [[ $attgroup != none ]] && [[ $uid != none ]] && [[ $gid != none ]];then
@@ -116,9 +126,11 @@ Vagrant.configure("2") do |config|
             uid = opts[:uid] 
             attgroup = opts[:attgroup] 
             gid = opts[:gid] 
-            clone_repos = opts[:clone_repos]
+            clone_repos = opts[:clone_repos] 
             gerrit_url = opts[:gerrit_url] 
             gerrit_repos = opts[:gerrit_repos] 
+
+            config.vm.provision "file", run: "always", source: "config", destination: "/tmp/config"
 
             if opts[:add_id_rsa] == "true"
                 config.vm.provision "file", run: "always", source: "id_rsa", destination: "/tmp/id_rsa"

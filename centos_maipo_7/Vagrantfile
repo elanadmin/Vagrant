@@ -8,6 +8,7 @@ servers = [
         :box_version => "2004.01",
         :mem => "2048",
         :cpu => "2",
+        :vbox_group => "/ELAN Development",
         :elanuser => "rmoturi",
         :add_id_rsa => "true",
         :username => "Rajesh Moturi",
@@ -92,7 +93,7 @@ Vagrant.configure("2") do |config|
             config.vm.provider "virtualbox" do |v|
 
                 v.name = opts[:name]
-            	 v.customize ["modifyvm", :id, "--groups", "/ELAN Development"]
+            	 v.customize ["modifyvm", :id, "--groups", opts[:vbox_group]]
                 v.customize ["modifyvm", :id, "--memory", opts[:mem]]
                 v.customize ["modifyvm", :id, "--cpus", opts[:cpu]]
 
