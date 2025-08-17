@@ -1,0 +1,119 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+servers = [
+    {
+        :name => "edallocvm01",
+        :box => "centos/8",
+        :box_version => "2011.0",
+        :mem => "2048",
+        :cpu => "2",
+        :vbox_group => "/Training",
+        :elanuser => "rmoturi",
+        :add_id_rsa => "true",
+        :username => "Rajesh Moturi",
+        :userpassword => "rmoturi",
+        :uid => "1984",
+        :elangroup => "default",
+        :gid => "1000",
+    }
+]
+
+# This script to install k8s using kubeadm will get executed after a box is provisioned
+$configureBox = <<-SCRIPT
+    # Positional Parameters
+    elanuser=$1
+    username=$2
+    userpassword=$3
+    uid=$4
+    elangroup=$5
+    gid=$6
+
+    # Setup Repos for Centos
+
+    if [ -f /var/tmp/resolv.conf ];then
+      sed -i "/^#/d" /etc/resolv.conf
+      cat /etc/resolv.conf >> /var/tmp/resolv.conf
+      sed -i "/^$/d" /var/tmp/resolv.conf
+      perl -lne 's/\s*$//; print if ! $x{$_}++' /var/tmp/resolv.conf
+      perl -i -ne 'print if ! $x{$_}++' /var/tmp/resolv.conf
+      mv /var/tmp/resolv.conf /etc/resolv.conf
+      chmod 644 /etc/resolv.conf
+    fi
+
+    echo "export EDITOR=vi" >> /etc/profile
+    yum repo-list 2>/dev/null
+    yum install -y net-tools bind-utils nc vim
+    
+    # run commands as vagrant user (sudo not required)
+    groupadd -f -g $gid $elangroup
+    useradd -u $uid -g $elangroup -s /bin/bash -c "$username" -d /home/$elanuser $elanuser
+    usermod -a -G wheel $elanuser
+    usermod -a -G wheel vagrant
+    yes "$userpassword" | passwd $elanuser
+    sed -i "/^%wheel/ s/.*/%wheel   ALL=(ALL:ALL) NOPASSWD:ALL/g" /etc/sudoers
+
+    if [ -f /var/tmp/id_rsa ];then
+      mkdir -p -m 700 /home/$elanuser/.ssh
+      mv /var/tmp/id_rsa /home/$elanuser/.ssh
+      ssh-keygen -y -f /home/$elanuser/.ssh/id_rsa > /home/$elanuser/.ssh/id_rsa.pub
+      cat /home/$elanuser/.ssh/id_rsa.pub >> /home/$elanuser/.ssh/authorized_keys
+      sed -i "/^$/d" /home/$elanuser/.ssh/authorized_keys
+      chmod 400 /home/$elanuser/.ssh/id_rsa
+      chmod 644 /home/$elanuser/.ssh/authorized_keys
+      chown -R $elanuser: /home/$elanuser
+    fi
+
+    # ip of this box
+    IP_ADDR=`ifconfig eth0 | grep Mask | awk '{print $2}'| cut -f2 -d:`
+    HOSTNAME=$(hostname)
+    echo -e "${IP_ADDR}\t\t${HOSTNAME}.elan.elantecs.com ${HOSTNAME}" >> /etc/hosts
+    sudo --user=vagrant touch /home/vagrant/.Xauthority
+
+    # required for setting up password less ssh between guest VMs
+    sudo sed -i "/^[^#]*PasswordAuthentication[[:space:]]no/c\PasswordAuthentication yes" /etc/ssh/sshd_config
+    sudo sed -i "s/^NM_CONTROLLED=yes/NM_CONTROLLED=no/g" /etc/sysconfig/network-scripts/ifcfg-eth1 2> /dev/null
+    sudo service sshd restart
+SCRIPT
+
+Vagrant.configure("2") do |config|
+
+    servers.each do |opts|
+        config.vm.define opts[:name] do |config|
+
+            config.vm.box = opts[:box]
+            config.vm.box_version = opts[:box_version]
+            config.vm.hostname = opts[:name]
+            config.vm.network :public_network, auto_config: true
+            config.vm.network :forwarded_port, guest: 22, host: 2222, id: "ssh", disabled: true
+            config.vm.network :forwarded_port, guest: 22, host: 2200, auto_correct: true
+
+            config.vm.provider "virtualbox" do |v|
+
+                v.name = opts[:name]
+            	 v.customize ["modifyvm", :id, "--groups", opts[:vbox_group]]
+                v.customize ["modifyvm", :id, "--memory", opts[:mem]]
+                v.customize ["modifyvm", :id, "--cpus", opts[:cpu]]
+
+            end
+
+            elanuser = opts[:elanuser] 
+            username = opts[:username] 
+            userpassword = opts[:userpassword] 
+            uid = opts[:uid] 
+            elangroup = opts[:elangroup] 
+            gid = opts[:gid] 
+
+            if opts[:add_id_rsa] == "true"
+              config.vm.provision "file", run: "always", source: "id_rsa", destination: "/var/tmp/id_rsa"
+            end
+
+            config.vm.provision "file", run: "always", source: "config/resolv.conf", destination: "/var/tmp/resolv.conf"
+
+            config.vm.provision "shell", run: "always", inline: $configureBox, :args => [elanuser,username,userpassword,uid,elangroup,gid]
+
+        end
+
+    end
+
+end 
