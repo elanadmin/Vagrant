@@ -11,7 +11,7 @@ servers = [
         :vbox_group => "/Training",
         :elanuser => "rmoturi",
         :add_id_rsa => "true",
-        :username => "Rajesh Moturi",
+        :username => "rmoturi",
         :userpassword => "rmoturi",
         :uid => "1984",
         :elangroup => "default",
@@ -30,6 +30,9 @@ $configureBox = <<-SCRIPT
     gid=$6
 
     # Setup Repos for Centos
+
+    sed -i -e "s/^mirrorlist/#mirrorlist/g" -e "s/^#baseurl/baseurl/g" /etc/yum.repos.d/*.repo
+    dnf install -y perl
 
     if [ -f /var/tmp/resolv.conf ];then
       sed -i "/^#/d" /etc/resolv.conf

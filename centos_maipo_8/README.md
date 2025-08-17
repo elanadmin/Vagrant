@@ -77,6 +77,37 @@ Execute the following vagrant command to start provisioning of VM in the same fo
 vagrant validate
 
 vagrant up
+
+# If you see the following Error, Please install the Guest additions in the Guest Operating Systems:
+
+    edallocvm01: Inserting generated public key within guest...
+    edallocvm01: Removing insecure key from the guest if it's present...
+    edallocvm01: Key inserted! Disconnecting and reconnecting using new SSH key...
+==> edallocvm01: Machine booted and ready!
+==> edallocvm01: Checking for guest additions in VM...
+    edallocvm01: No guest additions were detected on the base box for this VM! Guest
+    edallocvm01: additions are required for forwarded ports, shared folders, host only
+    edallocvm01: networking, and more. If SSH fails on this machine, please install
+    edallocvm01: the guest additions and repackage the box to continue.
+    edallocvm01:
+    edallocvm01: This is not an error message; everything may continue to work properly,
+    edallocvm01: in which case you may ignore this message.
+
+
+# Open the Oracle VirtualBox VM Guest Console.
+# PowerOff the Guest VM.
+# Select Machine -> Settings -> Storage to add Optical Drive with Empty.
+# Select Devices -> Insert Guest Additions CD Image
+# Login with above configured username and password.
+# Run the following Commands:
+```
+sudo -i
+sudo mkdir /mnt/cdrom
+sudo mount /dev/cdrom /mnt/cdrom
+cd /mnt/cdrom
+sudo sh ./VBoxLinuxAdditions.run --nox11
+
+Note: Click Right CTRL to get out of the Guest Console.
 ```
 
 ## Select Network Interface:

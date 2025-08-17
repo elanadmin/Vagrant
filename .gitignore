@@ -2,3 +2,4 @@ id_rsa
 ubuntu-*-console.log
 .vagrant/
 internal/
+id_rsa.pub
