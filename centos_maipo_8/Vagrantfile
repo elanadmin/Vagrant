@@ -30,8 +30,18 @@ $configureBox = <<-SCRIPT
     gid=$6
 
     # Setup Repos for Centos
+    
+    if [[ -f /dev/cdrom ]];then
+      mount /dev/cdrom /mnt
+      if [[ -f /mnt/VBoxLinuxAdditions.run ]] && [[ ! -f /var/tmp/VBoxLinuxAdditions.installed ]];then
+        echo -e "Running VBox Guest Additions ..."
+        /mnt/VBoxLinuxAdditions.run
+        touch /var/tmp/VBoxLinuxAdditions.installed
+      fi
+      umount /dev/cdrom
+    fi
 
-    sed -i -e "s/^mirrorlist/#mirrorlist/g" -e "s/^#baseurl/baseurl/g" /etc/yum.repos.d/*.repo
+    sed -i -e "s/^mirrorlist/#mirrorlist/g" -e "s/^#baseurl/baseurl/g" -e "s/mirror.centos.org/vault.centos.org/g" /etc/yum.repos.d/*.repo
     dnf install -y perl
 
     if [ -f /var/tmp/resolv.conf ];then
@@ -94,9 +104,10 @@ Vagrant.configure("2") do |config|
             config.vm.provider "virtualbox" do |v|
 
                 v.name = opts[:name]
-            	 v.customize ["modifyvm", :id, "--groups", opts[:vbox_group]]
+            	v.customize ["modifyvm", :id, "--groups", opts[:vbox_group]]
                 v.customize ["modifyvm", :id, "--memory", opts[:mem]]
                 v.customize ["modifyvm", :id, "--cpus", opts[:cpu]]
+                v.customize ["storageattach", :id, "--storagectl", "IDE", "--port", "0", "--device", "1", "--type", "dvddrive", "--medium", "C:\\Program Files\\Oracle\\VirtualBox\\VBoxGuestAdditions.iso"]
 
             end
 
